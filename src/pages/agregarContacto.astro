@@ -1,0 +1,101 @@
+---
+import Layout from "../layouts/Layout.astro";
+import MarcoMobile from "../components/MarcoMobile.astro";
+import Boton from "../components/Boton.astro";
+import Notificacion from "../components/Notificacion.astro";
+---
+
+<Layout >
+  <MarcoMobile>
+    <section class="w-full h-full bg-white border-2 border-gray-300 rounded-3xl bg-cover p-6 flex flex-col ">
+      <!-- Notificación -->
+      <Notificacion color="bg-green-500" message="Contacto agregado exitosamente" />
+      <!-- Notificación -->
+
+      <!-- Titulo -->
+      <div class="flex items-center gap-4 mb-4">
+        <Boton color="bg-red-500 w-5 h-5 text-sm" icon="fas fa-arrow-left" link="/contacto" />
+        <h2 class="text-xl font-semibold text-gray-600">Agregar Nuevo Contacto</h2>
+      </div>
+
+      <!-- Formulario de contacto -->
+      <form class="flex flex-col space-y-4 bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-200" id="contactForm">
+        <!-- Foto circular -->
+        <div class="flex flex-col items-center gap-2 relative p-5">
+          <div id="photoPreview" class="w-30 h-30 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full text-white flex items-center justify-center text-4xl font-bold relative">
+            <i id="photoIcon" class="fas fa-user text-white text-5xl"></i>
+            <label id="addPhotoBtn" for="photo" class="absolute bottom-0 right-0 w-7 h-7 bg-green-500 text-white text-base flex items-center justify-center rounded-full cursor-pointer hover:scale-110 transition">+</label>
+          </div>
+          <input type="file" name="photo" id="photo" accept="image/*" class="hidden">
+        </div>
+
+        <!-- inputs -->
+        <div class="relative">
+          <i class="fas fa-user absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"></i>
+          <input type="text" name="name" placeholder="Nombres" required autocomplete="off" class="w-full pl-10 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:ring-2 transition-colors">
+        </div>
+
+        <div class="relative">
+          <i class="fas fa-user absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"></i>
+          <input type="text" name="lastname" placeholder="Apellidos" autocomplete="off" class="w-full pl-10 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:ring-2 transition-colors">
+        </div>
+
+        <div class="relative">
+          <i class="fas fa-envelope absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"></i>
+          <input type="email" name="email" placeholder="Correo electrónico" required autocomplete="off" class="w-full pl-10 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:ring-2 transition-colors">
+        </div>
+
+        <div class="relative">
+          <i class="fas fa-phone absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"></i>
+          <input type="tel" name="phone" placeholder="Número telefónico" required autocomplete="off" class="w-full pl-10 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-blue-500 focus:ring-2 transition-colors">
+        </div>
+
+        <!-- Boton -->
+        <div class="flex justify-between gap-2 mt-2">
+          <button type="submit" class="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors cursor-pointer">Guardar</button>
+        </div>
+      </form>
+    </section>
+  </MarcoMobile>
+
+  <script type="module">
+    const formulario = document.getElementById("contactForm");
+    let contactos = JSON.parse(localStorage.getItem('contactosJSON')) || [];
+
+    function capitalizarPalabras(texto) {
+      return texto
+        .toLowerCase()
+        .split(' ')
+        .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1))
+        .join(' ');
+    }
+
+    formulario.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const datosForm = new FormData(formulario);
+
+      const nuevoContacto = {
+        id: Date.now(),
+        nombres: capitalizarPalabras(datosForm.get("name")?.trim() || ""),
+        apellidos: capitalizarPalabras(datosForm.get("lastname")?.trim() || ""),
+        email: datosForm.get("email")?.trim() || "",
+        telefono: datosForm.get("phone")?.trim() || ""
+      };
+
+      contactos.push(nuevoContacto);
+      localStorage.setItem('contactosJSON', JSON.stringify(contactos));
+      formulario.reset();
+
+      const notificacion = document.getElementById("notificacion");
+
+      notificacion.classList.remove("opacity-0", "pointer-events-none");
+      notificacion.classList.add("opacity-100");
+
+      setTimeout(() => {
+        notificacion.classList.remove("opacity-100");
+        notificacion.classList.add("opacity-0", "pointer-events-none");
+      }, 3000);
+    });
+  </script>
+</Layout>

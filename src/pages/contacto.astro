@@ -1,0 +1,176 @@
+---
+import Layout from "../layouts/Layout.astro";
+import MarcoMobile from "../components/MarcoMobile.astro";
+import Boton from "../components/Boton.astro";
+import BarraBusqueda from "../components/BarraBusqueda.astro";
+import Notificacion from "../components/Notificacion.astro";
+---
+
+<Layout>
+  <MarcoMobile>
+    <section class="w-full h-full overflow-y-auto scrollbar-hidden bg-white border-2 border-gray-300 rounded-3xl bg-cover flex flex-col relative p-4 gap-4">
+      <!-- Notificación -->
+      <Notificacion color="bg-red-500" message="contacto eliminado correctamente" />
+      <!-- Notificación -->
+
+      <!-- título y barra de búsqueda -->
+      <div class="w-full flex items-center gap-2 ">
+        <Boton color="bg-red-500" icon="fas fa-arrow-left" link="/" />
+        <BarraBusqueda>
+      </div>
+
+      <!-- Lista de Contacto -->
+      <div class="flex-1"> 
+        <h2 class="text-2xl font-semibold text-center mb-4 mt-4">Contactos</h2>
+        <ul id="listaContactos" class="space-y-2 mt-4">
+        </ul>
+      </div>
+
+      <!-- botón agregar -->
+      <div class="sticky bottom-2 self-end"> 
+        <Boton color="bg-green-500" icon="fas fa-plus" link="/agregarContacto" clasesExtra="shadow-xl shadow-gray-500 p-8 flex items-center justify-center rounded-md" />
+      </div>
+    </section>
+  </MarcoMobile>
+
+  <script type="module">
+    const listaContactos = document.getElementById("listaContactos");
+    const inputBusqueda = document.getElementById("inputBusqueda");
+
+    function capitalizar(texto) {
+      return texto
+        .toLowerCase()
+        .split(/\s+/)
+        .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+        .join(" ");
+    }
+
+    function mostrarContactos(filtro = "") {
+      listaContactos.innerHTML = "";
+      const contactos = JSON.parse(localStorage.getItem("contactosJSON")) || [];
+
+      const filtrados = contactos.filter(contacto => {
+        const textoCompleto = `${contacto.nombres} ${contacto.apellidos} ${contacto.email} ${contacto.telefono}`.toLowerCase();
+        return textoCompleto.includes(filtro.toLowerCase());
+      });
+
+      if (filtrados.length === 0) {
+        listaContactos.innerHTML = `
+          <li class="text-center text-gray-500">No se encontraron contactos</li>
+        `;
+        return;
+      }
+
+      filtrados.forEach(contacto => {
+        const li = document.createElement("li");
+        li.className = "p-4 bg-gray-200 rounded-lg shadow-xl flex items-center gap-4";
+
+        li.innerHTML = `
+          <i class="fas fa-user text-black"></i>
+          <div class="contactos flex justify-between items-center w-full" data-id="${contacto.id}">
+            <div class="cajaInfo cursor-pointer">
+              <h3 class="text-lg font-semibold">${contacto.nombres} ${contacto.apellidos}</h3>
+              <p class="info hidden text-gray-600">${contacto.email}</p>
+              <p class="info hidden text-gray-600">${contacto.telefono}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="btnEliminar text-red-500 hover:text-red-700 transition-colors cursor-pointer">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+              <button class="btnEditar text-blue-500 hover:text-blue-700 transition-colors cursor-pointer">
+                <i class="fa-solid fa-pencil"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        listaContactos.appendChild(li);
+      });
+    }
+
+    function eliminarContactoPorId(id) {
+      const contactos = JSON.parse(localStorage.getItem("contactosJSON")) || [];
+      const nuevosContactos = contactos.filter(contacto => contacto.id !== id);
+      localStorage.setItem("contactosJSON", JSON.stringify(nuevosContactos));
+      mostrarContactos(inputBusqueda.value);
+      mostrarNotificacion("Contacto eliminado exitosamente");
+    }
+
+    function editarContactoPorId(id) {
+      const contactos = JSON.parse(localStorage.getItem("contactosJSON")) || [];
+      const index = contactos.findIndex(contacto => contacto.id === id);
+      if (index === -1) return;
+
+      const contacto = contactos[index];
+
+      const nuevosNombres = capitalizar((prompt("Editar nombres:", contacto.nombres)?.trim()) || contacto.nombres);
+      const nuevosApellidos = capitalizar((prompt("Editar apellidos:", contacto.apellidos)?.trim()) || contacto.apellidos);
+      const nuevoEmail = (prompt("Editar correo electrónico:", contacto.email)?.trim()) || contacto.email;
+      const nuevoTelefono = (prompt("Editar número telefónico:", contacto.telefono)?.trim()) || contacto.telefono;
+
+      contactos[index] = {
+        ...contacto,
+        nombres: nuevosNombres,
+        apellidos: nuevosApellidos,
+        email: nuevoEmail,
+        telefono: nuevoTelefono
+      };
+
+      localStorage.setItem("contactosJSON", JSON.stringify(contactos));
+      mostrarContactos(inputBusqueda.value);
+      mostrarNotificacion("Contacto editado exitosamente");
+    }
+
+    function mostrarNotificacion(texto = "Contacto editado exitosamente") {
+      const notificacion = document.getElementById("notificacion");
+      if (notificacion) {
+        notificacion.querySelector("span").textContent = texto;
+        notificacion.classList.remove("opacity-0", "pointer-events-none");
+        notificacion.classList.add("opacity-100");
+        setTimeout(() => {
+          notificacion.classList.remove("opacity-100");
+          notificacion.classList.add("opacity-0", "pointer-events-none");
+        }, 3000);
+      }
+    }
+
+    listaContactos.addEventListener("click", (e) => {
+      const btnEliminar = e.target.closest(".btnEliminar");
+      const btnEditar = e.target.closest(".btnEditar");
+      const caja = e.target.closest(".contactos");
+
+      if (btnEliminar) {
+        const divContacto = btnEliminar.closest(".contactos");
+        const id = Number(divContacto.dataset.id);
+        eliminarContactoPorId(id);
+      }
+
+      if (btnEditar) {
+        const divContacto = btnEditar.closest(".contactos");
+        const id = Number(divContacto.dataset.id);
+        editarContactoPorId(id);
+      }
+
+      if (caja && !btnEliminar && !btnEditar) {
+        const infoParrafos = caja.querySelectorAll(".info");
+        infoParrafos.forEach(p => p.classList.toggle("hidden"));
+      }
+    });
+
+    inputBusqueda.addEventListener("input", () => {
+      const texto = inputBusqueda.value.trim();
+      mostrarContactos(texto);
+    });
+
+    mostrarContactos();
+  </script>
+
+  <style>
+    .scrollbar-hidden {
+      -ms-overflow-style: none; /* IE y Edge */
+      scrollbar-width: none; /* Firefox */
+    }
+    .scrollbar-hidden::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+  </style>
+</Layout>
